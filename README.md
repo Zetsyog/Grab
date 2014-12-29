@@ -1,13 +1,10 @@
 Grab Bukkit Plugin
 ==================
 
-## Description ##
+To see more informations go on [BukkitDev](http://dev.bukkit.org/bukkit-plugins/grab/)
 
-This is a simple plugin that allow you to use a bow as a grab.
-So you just need to shoot an arrow and you will moved to it.
+## Importing the project ##
 
-## Installation ##
-
-To install this plugin you need to install first ZLib plugin, it's a simple library
-I made to help in my plugin.
-Once ZLib installed, just download the jar, and put it in your plugins/ folder.
+First you need to clone the repo.
+Then create a project on the sources with your favourite IDE and then add the jars in the _libs/_ folder.
+And it's done ! You can code what you want !
