@@ -1,0 +1,5 @@
+name: Grab
+version: 0.1
+author: Zetsyog
+main: com.zetsyog.plugin.grab.GrabPlugin
+depend: [ZLib]
