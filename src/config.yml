@@ -1,0 +1,8 @@
+# The maximum range the grab will be usable
+max-range: 30
+# Grab lore (text under the items)
+grab-lore:
+  - It's a great grab !
+  - Right Click to shoot the grab
+  - Left Click to cancel
+debug: false

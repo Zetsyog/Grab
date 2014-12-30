@@ -1,7 +1,5 @@
 package com.zetsyog.plugin.grab;
 
-import com.zetsyog.plugin.util.Util;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
@@ -14,24 +12,31 @@ public class PlayerGrabTask implements Runnable {
 
     private GrabListener listener;
     private Player player;
-    private Arrow arrow;
+    private Location dest;
+    private int maxRange;
 
-    public PlayerGrabTask(GrabListener listener, Player p, Arrow arrow)
+    public PlayerGrabTask(GrabListener listener, Player p, Location dest)
     {
         this.listener = listener;
-        player = p;
-        this.arrow = arrow;
+        this.player = p;
+        this.dest = dest;
+    }
+
+    public Location getDest()
+    {
+        return dest;
     }
 
     @Override
     public void run()
     {
-        Location arrowPos = arrow.getLocation();
-        Location playerPos = player.getEyeLocation();
+        Location arrowPos = dest.clone();
+        Location playerPos = player.getLocation();
 
-        if(playerPos.distance(arrowPos) > 30)
+        if(playerPos.distance(arrowPos) > listener.getMaxRange())
         {
-            listener.removePlayerAndGrabTask(player);
+            listener.removeGrabTask(player);
+            listener.getPlugin().debug("Cancel cause : maxRange " + playerPos.distance(arrowPos));
             return;
         }
 
