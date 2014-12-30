@@ -1,9 +1,9 @@
 package com.zetsyog.plugin.grab;
 
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -15,6 +15,7 @@ import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scheduler.BukkitWorker;
 
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +55,7 @@ public class GrabListener implements Listener {
                     {
                         itemInHand.getItemMeta().setLore(Grab.getGrabItemStack(plugin.getConfig()).getItemMeta().getLore());
                     }
-                    this.addLastLocation(player, arrow.getLocation());
+                    this.setLastLocation(player, arrow.getLocation());
                 }
             }
         }
@@ -65,18 +66,15 @@ public class GrabListener implements Listener {
     {
         if(event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.LEFT_CLICK_BLOCK)
         {
-            if(Grab.isGrabItemStack(event.getItem()))
+            if(event.getItem() != null && Grab.isGrabItemStack(event.getItem()))
             {
                 if(playersGrabbing.containsKey(event.getPlayer().getUniqueId()))
                 {
-                    /*PlayerGrabTask grabTask = null;
-                    List<BukkitTask> tasks = Bukkit.getScheduler().getPendingTasks();
-                    for(BukkitTask task : tasks)
-                    {
-                        if(task.getTaskId() == playersGrabbing.get(event.getPlayer().getUniqueId()))
-                        {
-                            grabTask = (PlayerGrabTask) task;
-                            break;
+                    PlayerGrabTask grabTask = null;
+                    List<BukkitWorker> tasks = Bukkit.getScheduler().getActiveWorkers();
+                    for(BukkitWorker task : tasks) {
+                        if (task.getTaskId() == playersGrabbing.get(event.getPlayer().getUniqueId())) {
+                            grabTask = (PlayerGrabTask) task.getThread();
                         }
                     }
 
@@ -94,7 +92,7 @@ public class GrabListener implements Listener {
                     else
                     {
                         removeGrabTask(event.getPlayer());
-                    }*/
+                    }
                     removeGrabTask(event.getPlayer());
                     event.setCancelled(true);
                 }
@@ -107,7 +105,7 @@ public class GrabListener implements Listener {
         }
     }
 
-    public void addLastLocation(Player player, Location location)
+    public void setLastLocation(Player player, Location location)
     {
         removeLastLocation(player);
         if(player.getLocation().distance(location) <= maxRange) {
@@ -131,7 +129,28 @@ public class GrabListener implements Listener {
         {
             Bukkit.getScheduler().cancelTask(playersGrabbing.get(player.getUniqueId()));
             player.setFallDistance(0);
+            Entity[] entities = player.getWorld().getChunkAt(player.getLocation()).getEntities();
+
+            for(int i = 0; i < entities.length; i++)
+            {
+                if(entities[i] instanceof FishHook)
+                {
+                    FishHook hook = (FishHook) entities[i];
+                    if(hook.getShooter() instanceof Player)
+                    {
+                        if(((Player)hook.getServer()).getUniqueId() == player.getUniqueId())
+                        {
+                            hook.remove();
+                        }
+                    }
+                }
+            }
+
             playersGrabbing.remove(player.getUniqueId());
+            player.setFlying(false);
+            if(player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR) {
+                player.setAllowFlight(false);
+            }
             plugin.debug("Removing " + player.getName() + "'s grab task");
         }
     }
@@ -146,23 +165,24 @@ public class GrabListener implements Listener {
                 plugin.debug("Reset cause : distance (" + dest.distance(player.getLocation()) + " > to max range");
             }
             else {
-                BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new PlayerGrabTask(this, player, dest), 0, 5);
+                BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new PlayerGrabTask(this, player, dest), 0, 1);
                 playersGrabbing.put(player.getUniqueId(), task.getTaskId());
+
+                player.setAllowFlight(true);
+                player.setFlying(true);
+
                 plugin.debug("Registering player " + player.getName() + " grabbing to " + lastLocations.get(player.getUniqueId()).toString());
                 plugin.debug("from " + player.getLocation().toString());
                 plugin.debug("distance : " + player.getLocation().distance(dest));
-                plugin.debug("vector : " + dest.subtract(player.getLocation()).toVector().toString());
+                plugin.debug("vector : " + dest.clone().subtract(player.getLocation()).toVector().toString());
             }
         }
     }
 
     public void reset(Player player)
     {
-        if(lastLocations.containsKey(player.getUniqueId()))
-            lastLocations.remove(player.getUniqueId());
-
-        if(playersGrabbing.containsKey(player.getUniqueId()))
-            playersGrabbing.remove(player.getUniqueId());
+        this.removeGrabTask(player);
+        this.removeLastLocation(player);
 
         plugin.debug("Reseting player " + player.getName());
     }

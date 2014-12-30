@@ -20,6 +20,7 @@
 package com.zetsyog.plugin.grab;
 
 import com.zetsyog.plugin.config.ConfigManager;
+import com.zetsyog.plugin.lib.ZLib;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -27,6 +28,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.UnknownDependencyException;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -39,15 +41,22 @@ import java.util.logging.Logger;
  */
 public class GrabPlugin extends JavaPlugin {
 
+    public static final int minZLibVersion = 11;
+
     private Logger log;
     private ConfigManager configManager;
     private FileConfiguration config;
     private boolean debug = false;
 
+
     @Override
     public void onEnable() {
         log = getLogger();
 
+        if(Bukkit.getPluginManager().getPlugin("ZLib").getDescription().getVersion().equalsIgnoreCase("0.1") ||ZLib.versionInteger < minZLibVersion)
+        {
+            throw new UnknownDependencyException("Zlib dependency is outdated, please update it on bukkit dev.");
+        }
 
         configManager = new ConfigManager(this, "config.yml");
         this.configManager.saveDefaultConfig();
